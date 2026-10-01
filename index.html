@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Product Store</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #27ae60;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #219653;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #fff;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .price {
+            color: #27ae60;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📦 Product Inventory</h1>
+
+    <!-- Form to Add New Products -->
+    <form id="product-form">
+        <h2>Add New Product</h2>
+        <input type="text" id="name" placeholder="Product Name" required>
+        <input type="number" id="price" placeholder="Price ($)" step="0.01" required>
+        <button type="submit">Add Product</button>
+    </form>
+
+    <h2>Current Inventory</h2>
+    <ul id="product-list">
+        <li>Loading products...</li>
+    </ul>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api/products';
+        const productList = document.getElementById('product-list');
+        const productForm = document.getElementById('product-form');
+
+        // 1. Fetch and Display Products
+        async function fetchProducts() {
+            try {
+                const response = await fetch(API_URL);
+                const products = await response.json();
+                
+                productList.innerHTML = ''; 
+
+                if (products.length === 0) {
+                    productList.innerHTML = '<li>No products found in database.</li>';
+                    return;
+                }
+
+                products.forEach(product => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${product.name}</span>
+                        <span class="price">$${product.price.toFixed(2)}</span>
+                    `;
+                    productList.appendChild(li);
+                });
+            } catch (err) {
+                console.error('Error fetching products:', err);
+                productList.innerHTML = '<li style="color: red;">Failed to connect to backend API.</li>';
+            }
+        }
+
+        // 2. Handle Form Submission (POST Request)
+        productForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent page reload
+
+            const name = document.getElementById('name').value;
+            const price = parseFloat(document.getElementById('price').value);
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, price })
+                });
+
+                if (response.ok) {
+                    document.getElementById('name').value = '';
+                    document.getElementById('price').value = '';
+                    fetchProducts(); // Refresh the list automatically!
+                } else {
+                    alert('Failed to create product');
+                }
+            } catch (err) {
+                console.error('Error submitting form:', err);
+            }
+        });
+
+        // Run on page load
+        fetchProducts();
+    </script>
+
+</body>
+</html>
