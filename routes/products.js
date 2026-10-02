@@ -2,6 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const verifyToken = require('../middleware/auth');
+
 
 // GET all products
 router.get('/', async (req, res) => {
@@ -14,7 +16,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST a new product
-router.post('/', async (req, res) => {
+router.post('/', verifyToken,async (req, res) => {
     try {
         const newProduct = await Product.create({
             name: req.body.name,
@@ -22,6 +24,7 @@ router.post('/', async (req, res) => {
         });
         res.status(201).json({ message: "Product created!", product: newProduct });
     } catch (err) {
+        console.error(err);
         res.status(400).json({ error: "Failed to create product" });
     }
 });
@@ -38,7 +41,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // UPDATE a product by ID
-router.put('/:id', async (req, res) => {
+router.put('/:id', verifyToken,async (req, res) => {
     try {
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
@@ -53,7 +56,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE a product by ID
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyToken, async (req, res) => {
     try {
         const deletedProduct = await Product.findByIdAndDelete(req.params.id);
         if (!deletedProduct) return res.status(404).json({ error: "Product not found" });

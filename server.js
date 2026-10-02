@@ -3,8 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-
 const app = express();
+
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -19,6 +19,10 @@ mongoose.connect(process.env.MONGO_URI)
 // Mount Routes
 const productRoutes = require('./routes/products');
 app.use('/api/products', productRoutes);
+
+// Mount Auth Routes
+const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
 
 // Home route
 app.get('/', (req, res) => {
