@@ -3,75 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Product Store</title>
+    <title>Secure Product Inventory</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #f4f4f9;
-        }
-        h1, h2 {
-            color: #333;
-        }
-        form {
-            background: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 25px;
-        }
-        input {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #27ae60;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #219653;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        li {
-            background: #fff;
-            margin-bottom: 10px;
-            padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .price {
-            color: #27ae60;
-            font-weight: bold;
-        }
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f4f4f9; }
+        h1, h2 { color: #333; }
+        .card { background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        input { width: calc(100% - 20px); padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #27ae60; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #219653; }
+        .secondary-btn { background-color: #2980b9; margin-left: 5px; }
+        .secondary-btn:hover { background-color: #1f618d; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #fff; margin-bottom: 10px; padding: 15px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .price { color: #27ae60; font-weight: bold; }
+        #auth-section { display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
-    <h1>📦 Product Inventory</h1>
+    <h1>📦 Secure Product Inventory</h1>
 
-    <!-- Form to Add New Products -->
-    <form id="product-form">
+    <!-- Auth Section -->
+    <div class="card" id="auth-card">
+        <h2 id="auth-title">Login</h2>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button onclick="handleAuth()" id="auth-btn">Log In</button>
+        <button class="secondary-btn" onclick="toggleMode()" id="toggle-btn">Need an account? Sign Up</button>
+        <p id="auth-msg" style="color: red; font-size: 14px;"></p>
+    </div>
+
+    <!-- Product Form (Hidden until logged in) -->
+    <div class="card" id="product-form-card" style="display: none;">
+        <div id="auth-status" style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+            <span id="user-display" style="font-weight: bold; color: #2c3e50;"></span>
+            <button onclick="logout()" style="background-color: #e74c3c; padding: 5px 10px; font-size: 12px;">Log Out</button>
+        </div>
         <h2>Add New Product</h2>
-        <input type="text" id="name" placeholder="Product Name" required>
-        <input type="number" id="price" placeholder="Price ($)" step="0.01" required>
-        <button type="submit">Add Product</button>
-    </form>
+        <form id="product-form">
+            <input type="text" id="product-name" placeholder="Product Name" required>
+            <input type="number" id="product-price" placeholder="Price ($)" step="0.01" required>
+            <button type="submit">Add Product</button>
+        </form>
+    </div>
 
     <h2>Current Inventory</h2>
     <ul id="product-list">
@@ -79,68 +53,120 @@
     </ul>
 
     <script>
-        const API_URL = 'http://localhost:3000/api/products';
-        const productList = document.getElementById('product-list');
-        const productForm = document.getElementById('product-form');
+        const API_URL = 'http://localhost:3000/api';
+        let isSignupMode = false;
 
-        // 1. Fetch and Display Products
-        async function fetchProducts() {
+        function toggleMode() {
+            isSignupMode = !isSignupMode;
+            document.getElementById('auth-title').innerText = isSignupMode ? 'Sign Up' : 'Login';
+            document.getElementById('auth-btn').innerText = isSignupMode ? 'Create Account' : 'Log In';
+            document.getElementById('toggle-btn').innerText = isSignupMode ? 'Already have an account? Login' : 'Need an account? Sign Up';
+        }
+
+        async function handleAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const endpoint = isSignupMode ? '/auth/signup' : '/auth/login';
+
             try {
-                const response = await fetch(API_URL);
+                const res = await fetch(API_URL + endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (!res.ok) throw new Error(data.error || 'Authentication failed');
+
+                if (isSignupMode) {
+                    alert('Account created successfully! Please log in.');
+                    toggleMode();
+                } else {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userEmail', email);
+                    checkAuthState();
+                }
+            } catch (err) {
+                document.getElementById('auth-msg').innerText = err.message;
+            }
+        }
+
+        function checkAuthState() {
+            const token = localStorage.getItem('token');
+            const userEmail = localStorage.getItem('userEmail');
+
+            if (token) {
+                document.getElementById('auth-card').style.display = 'none';
+                document.getElementById('product-form-card').style.display = 'block';
+                document.getElementById('user-display').innerText = `Logged in as: ${userEmail}`;
+            } else {
+                document.getElementById('auth-card').style.display = 'block';
+                document.getElementById('product-form-card').style.display = 'none';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userEmail');
+            checkAuthState();
+        }
+
+        // Fetch and Display Products
+        async function fetchProducts() {
+            const productList = document.getElementById('product-list');
+            try {
+                const response = await fetch(API_URL + '/products');
                 const products = await response.json();
                 
                 productList.innerHTML = ''; 
-
                 if (products.length === 0) {
-                    productList.innerHTML = '<li>No products found in database.</li>';
+                    productList.innerHTML = '<li>No products found.</li>';
                     return;
                 }
 
                 products.forEach(product => {
                     const li = document.createElement('li');
-                    li.innerHTML = `
-                        <span>${product.name}</span>
-                        <span class="price">$${product.price.toFixed(2)}</span>
-                    `;
+                    li.innerHTML = `<span>${product.name}</span> <span class="price">$${product.price.toFixed(2)}</span>`;
                     productList.appendChild(li);
                 });
             } catch (err) {
-                console.error('Error fetching products:', err);
-                productList.innerHTML = '<li style="color: red;">Failed to connect to backend API.</li>';
+                productList.innerHTML = '<li style="color: red;">Failed to connect to API.</li>';
             }
         }
 
-        // 2. Handle Form Submission (POST Request)
-        productForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // Prevent page reload
-
-            const name = document.getElementById('name').value;
-            const price = parseFloat(document.getElementById('price').value);
+        // Submit New Product with Token
+        document.getElementById('product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('product-name').value;
+            const price = parseFloat(document.getElementById('product-price').value);
+            const token = localStorage.getItem('token');
 
             try {
-                const response = await fetch(API_URL, {
+                const response = await fetch(API_URL + '/products', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({ name, price })
                 });
 
                 if (response.ok) {
-                    document.getElementById('name').value = '';
-                    document.getElementById('price').value = '';
-                    fetchProducts(); // Refresh the list automatically!
+                    document.getElementById('product-name').value = '';
+                    document.getElementById('product-price').value = '';
+                    fetchProducts();
                 } else {
-                    alert('Failed to create product');
+                    alert('Session expired or unauthorized.');
+                    logout();
                 }
             } catch (err) {
                 console.error('Error submitting form:', err);
             }
         });
 
-        // Run on page load
+        // Initialize Page
+        checkAuthState();
         fetchProducts();
     </script>
-
 </body>
 </html>
